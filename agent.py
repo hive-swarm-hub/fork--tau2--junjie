@@ -130,14 +130,14 @@ def parse_response(choice):
     """Convert an LLM API response choice into a tau2 AssistantMessage."""
     tool_calls = None
     if choice.tool_calls:
-        tool_calls = [
-            ToolCall(
-                id=tc.id,
-                name=tc.function.name,
-                arguments=json.loads(tc.function.arguments),
-            )
-            for tc in choice.tool_calls
-        ]
+        parsed = []
+        for tc in choice.tool_calls:
+            try:
+                args = json.loads(tc.function.arguments)
+            except json.JSONDecodeError:
+                args = {}
+            parsed.append(ToolCall(id=tc.id, name=tc.function.name, arguments=args))
+        tool_calls = parsed if parsed else None
     return AssistantMessage(
         role="assistant",
         content=choice.content or "",
